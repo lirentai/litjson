@@ -1,0 +1,8 @@
+F:\Git\litjson\src\Sampler\bin\Debug\Sampler.exe.config
+F:\Git\litjson\src\Sampler\bin\Debug\Sampler.exe
+F:\Git\litjson\src\Sampler\bin\Debug\Sampler.pdb
+F:\Git\litjson\src\Sampler\bin\Debug\LitJson.dll
+F:\Git\litjson\src\Sampler\bin\Debug\LitJson.pdb
+F:\Git\litjson\src\Sampler\obj\Debug\Sampler.csprojResolveAssemblyReference.cache
+F:\Git\litjson\src\Sampler\obj\Debug\Sampler.exe
+F:\Git\litjson\src\Sampler\obj\Debug\Sampler.pdb

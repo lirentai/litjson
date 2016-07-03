@@ -149,10 +149,8 @@ namespace LitJson
                 break;
 
             case Condition.Value:
-                if (! context.InArray &&
-                    (! context.InObject || ! context.ExpectingValue))
-                    throw new JsonException (
-                        "Can't add a value here");
+                if (! context.InArray &&(! context.InObject || ! context.ExpectingValue))
+                    throw new JsonException ("Can't add a value here");
 
                 break;
             }

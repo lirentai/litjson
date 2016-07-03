@@ -1,0 +1,7 @@
+F:\Git\litjson\src\LitJson\bin\Debug\LitJson.dll
+F:\Git\litjson\src\LitJson\bin\Debug\LitJson.pdb
+F:\Git\litjson\src\LitJson\obj\Debug\LitJson.csprojResolveAssemblyReference.cache
+F:\Git\litjson\src\LitJson\obj\Debug\LitJson.dll
+F:\Git\litjson\src\LitJson\obj\Debug\LitJson.pdb
+F:\Git\litjson\src\LitJson\obj\Debug\LitJson.Properties.Resources.resources
+F:\Git\litjson\src\LitJson\obj\Debug\LitJson.csproj.GenerateResource.Cache

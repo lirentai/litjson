@@ -99,6 +99,10 @@ namespace LitJson
 
     public class JsonMapper
     {
+        #region Configuration
+        public static bool IsEnumString =false;
+        #endregion
+
         #region Fields
         private static int max_nesting_depth;
 
@@ -323,11 +327,7 @@ namespace LitJson
                             inst_type));
             }
 
-            if (reader.Token == JsonToken.Double ||
-                reader.Token == JsonToken.Int ||
-                reader.Token == JsonToken.Long ||
-                reader.Token == JsonToken.String ||
-                reader.Token == JsonToken.Boolean) {
+            if (reader.Token == JsonToken.Double ||reader.Token == JsonToken.Int ||reader.Token == JsonToken.Long ||reader.Token == JsonToken.String ||reader.Token == JsonToken.Boolean) {
 
                 Type json_type = reader.Value.GetType ();
 
@@ -335,27 +335,21 @@ namespace LitJson
                     return reader.Value;
 
                 // If there's a custom importer that fits, use it
-                if (custom_importers_table.ContainsKey (json_type) &&
-                    custom_importers_table[json_type].ContainsKey (
-                        value_type)) {
+                if (custom_importers_table.ContainsKey (json_type) &&custom_importers_table[json_type].ContainsKey (value_type)) {
 
-                    ImporterFunc importer =
-                        custom_importers_table[json_type][value_type];
+                    ImporterFunc importer =custom_importers_table[json_type][value_type];
 
                     return importer (reader.Value);
                 }
 
                 // Maybe there's a base importer that works
-                if (base_importers_table.ContainsKey (json_type) &&
-                    base_importers_table[json_type].ContainsKey (
-                        value_type)) {
+                if (base_importers_table.ContainsKey (json_type) &&base_importers_table[json_type].ContainsKey (value_type)) {
 
-                    ImporterFunc importer =
-                        base_importers_table[json_type][value_type];
+                    ImporterFunc importer =base_importers_table[json_type][value_type];
 
                     return importer (reader.Value);
                 }
-
+                
                 // Maybe it's an enum
                 if (value_type.IsEnum)
                     return Enum.ToObject (value_type, reader.Value);
@@ -364,13 +358,10 @@ namespace LitJson
                 MethodInfo conv_op = GetConvOp (value_type, json_type);
 
                 if (conv_op != null)
-                    return conv_op.Invoke (null,
-                                           new object[] { reader.Value });
+                    return conv_op.Invoke (null,new object[] { reader.Value });
 
                 // No luck
-                throw new JsonException (String.Format (
-                        "Can't assign value '{0}' (type {1}) to type {2}",
-                        reader.Value, json_type, inst_type));
+                throw new JsonException (String.Format ("Can't assign value '{0}' (type {1}) to type {2}",reader.Value, json_type, inst_type));
             }
 
             object instance = null;
@@ -426,23 +417,16 @@ namespace LitJson
                         break;
 
                     string property = (string) reader.Value;
-
                     if (t_data.Properties.ContainsKey (property)) {
-                        PropertyMetadata prop_data =
-                            t_data.Properties[property];
+                        PropertyMetadata prop_data =t_data.Properties[property];
 
                         if (prop_data.IsField) {
-                            ((FieldInfo) prop_data.Info).SetValue (
-                                instance, ReadValue (prop_data.Type, reader));
+                            ((FieldInfo) prop_data.Info).SetValue (instance, ReadValue (prop_data.Type, reader));
                         } else {
-                            PropertyInfo p_info =
-                                (PropertyInfo) prop_data.Info;
+                            PropertyInfo p_info =(PropertyInfo) prop_data.Info;
 
                             if (p_info.CanWrite)
-                                p_info.SetValue (
-                                    instance,
-                                    ReadValue (prop_data.Type, reader),
-                                    null);
+                                p_info.SetValue (instance,ReadValue (prop_data.Type, reader),null);
                             else
                                 ReadValue (prop_data.Type, reader);
                         }
@@ -451,19 +435,44 @@ namespace LitJson
                         if (! t_data.IsDictionary) {
 
                             if (! reader.SkipNonMembers) {
-                                throw new JsonException (String.Format (
-                                        "The type {0} doesn't have the " +
-                                        "property '{1}'",
-                                        inst_type, property));
+                                throw new JsonException (String.Format ("The type {0} doesn't have the " +"property '{1}'",inst_type, property));
                             } else {
                                 ReadSkip (reader);
                                 continue;
                             }
                         }
-
-                        ((IDictionary) instance).Add (
-                            property, ReadValue (
-                                t_data.ElementType, reader));
+                        //Add Base Key Type Support For Dictionary
+                        object key_value = null;
+                        Type key_type = inst_type.GetGenericArguments()[0];
+                        Type dic_value_type = inst_type.GetGenericArguments()[1];
+                        //
+                        if (key_type.IsEnum)
+                        {
+                            key_value = Enum.Parse(key_type, property);
+                        }
+                        else
+                        {
+                            switch (key_type.Name)
+                            {
+                                case "Int32":
+                                    key_value = Convert.ToInt32(property);
+                                    break;
+                                case "Single":
+                                    key_value = Convert.ToSingle(property);
+                                    break;
+                                case "String":
+                                    key_value = property;
+                                    break;
+                            }
+                        }
+                        if(key_value != null)
+                        {
+                            ((IDictionary)instance).Add(key_value, ReadValue(dic_value_type, reader));
+                        }
+                        else
+                        {
+                            throw new JsonException(String.Format("The Dictionary {0} Doesn't Support Key Type:{1}", inst_type.Name, inst_type.GetGenericArguments()[0].Name));
+                        }
                     }
 
                 }
@@ -530,6 +539,7 @@ namespace LitJson
                         break;
 
                     string property = (string) reader.Value;
+
 
                     ((IDictionary) instance)[property] = ReadValue (
                         factory, reader);
@@ -683,15 +693,10 @@ namespace LitJson
             table[json_type][value_type] = importer;
         }
 
-        private static void WriteValue (object obj, JsonWriter writer,
-                                        bool writer_is_private,
-                                        int depth)
+        private static void WriteValue (object obj, JsonWriter writer,bool writer_is_private,int depth)
         {
             if (depth > max_nesting_depth)
-                throw new JsonException (
-                    String.Format ("Max allowed object depth reached while " +
-                                   "trying to export from type {0}",
-                                   obj.GetType ()));
+                throw new JsonException (String.Format ("Max allowed object depth reached while " +"trying to export from type {0}",obj.GetType ()));
 
             if (obj == null) {
                 writer.Write (null);
@@ -753,11 +758,13 @@ namespace LitJson
             }
 
             if (obj is IDictionary) {
+                Type keyType = obj.GetType().GetGenericArguments()[0];
                 writer.WriteObjectStart ();
+
                 foreach (DictionaryEntry entry in (IDictionary) obj) {
-                    writer.WritePropertyName ((string) entry.Key);
-                    WriteValue (entry.Value, writer, writer_is_private,
-                                depth + 1);
+                    //Fixed
+                    writer.WritePropertyName(entry.Key.ToString());
+                    WriteValue (entry.Value, writer, writer_is_private,depth + 1);
                 }
                 writer.WriteObjectEnd ();
 
@@ -805,10 +812,8 @@ namespace LitJson
             foreach (PropertyMetadata p_data in props) {
                 if (p_data.IsField) {
                     writer.WritePropertyName (p_data.Info.Name);
-                    WriteValue (((FieldInfo) p_data.Info).GetValue (obj),
-                                writer, writer_is_private, depth + 1);
-                }
-                else {
+                    WriteValue (((FieldInfo) p_data.Info).GetValue (obj),writer, writer_is_private, depth + 1);
+                }else {
                     PropertyInfo p_info = (PropertyInfo) p_data.Info;
 
                     if (p_info.CanRead) {
@@ -823,14 +828,14 @@ namespace LitJson
         #endregion
 
 
-        public static string ToJson (object obj)
+        public static string ToJson (object obj,bool format =false)
         {
             lock (static_writer_lock) {
                 static_writer.Reset ();
 
                 WriteValue (obj, static_writer, true, 0);
 
-                return static_writer.ToString ();
+                return format ? JsonFromat.FormatJson(static_writer.ToString()) : static_writer.ToString();
             }
         }
 
